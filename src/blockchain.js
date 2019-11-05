@@ -7,6 +7,28 @@ class Transaction {
 		this.toAdress = toAdress;
 		this.amount = amount;
 	}
+
+	calculateHash() {
+		return SHA256(this.fromAdress, this.toAdress, this.amount).toString();
+	}
+
+	signTransaction(signingKey) {
+		if(signingKey.getPublic("hex") !== this.fromAdress) {
+			throw new Erorr("you cannot use other people's wallets !");
+		}
+		const hasTx = this.calculateHash();
+		const sig = signingKey.sign(hashTx, "base64");
+		this.signature = sig.toDER("hex");
+	}
+
+	isValid() {
+		if(this.fromAdress === null) return true;
+		if(!this.signature || isEmpty(this.signature)) {
+			throw new Error("transaction not signed.");
+		}
+		const publicKey = ec.keyFromPublic(this.fromAdress, "hex");
+		return publicKey.verify(this.calculateHash(), this.signature);
+	}
 }
 
 class Block {
@@ -23,7 +45,7 @@ class Block {
 	}
 
 	mineBlock(difficulty) {
-		while(this.hash.substring(0,difficulty) !== Array(difficulty + 1).join("0")) {
+		while(this.hash.substring(0,difficulty) !== Array(difficulty + 1).join("0")) {	//the miner will increase the nonce value untill the difficulty condition is met.
 			this.nonce++;
 			this.hash = this.calculateHash();
 			console.log(this.hash);
@@ -34,13 +56,13 @@ class Block {
 class Blockchain {
 	constructor() {
 		this.chain = [this.createGenesisBlock()];
-		this.difficulty = 2;
+		this.difficulty = 3;	//how many zeros must be at the beginning of a hash to complete the mining 
 		this.pendingTransaction = [];
 		this.miningReward = 100;
 	}
 
 	createGenesisBlock() {
-		return new Block("Genesis Block", "0");
+		return new Block("Genesis Block", "0");	//the first block
 	}
 
 	getLatestBlock() {
@@ -99,18 +121,5 @@ class Blockchain {
 	}
 }
 
-let myCoin = new Blockchain();
-myCoin.createTransaction(new Transaction("adress 1", "adress 2", 18));
-myCoin.createTransaction(new Transaction("adress 1", "adress 3", 19));
-myCoin.createTransaction(new Transaction("adress 2", "adress 1", 21));
-myCoin.createTransaction(new Transaction("adress 2", "adress 3", 28));
-myCoin.createTransaction(new Transaction("adress 3", "adress 1", 19));
-myCoin.createTransaction(new Transaction("adress 3", "adress 2", 38));
-myCoin.minePendingTransaction("adress 4")
-console.log("balance of adress 1 is : ", myCoin.getBalanceOfAdress("adress 1"));
-console.log("balance of adress 2 is : ", myCoin.getBalanceOfAdress("adress 2"));
-console.log("balance of adress 3 is : ", myCoin.getBalanceOfAdress("adress 3"));
-console.log("balance of adress 4 is : ", myCoin.getBalanceOfAdress("adress 4"));
-
-myCoin.minePendingTransaction("adress 4");
-console.log("balance of adress 4 is : ", myCoin.getBalanceOfAdress("adress 4"));
+module.exports.Blockchain = Blockchain;
+module.exports.Transaction = Transaction;
