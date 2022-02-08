@@ -56,7 +56,7 @@ class Block {
 class Blockchain {
 	constructor() {
 		this.chain = [this.createGenesisBlock()];
-		this.difficulty = 3;	//how many zeros must be at the beginning of a hash to complete the mining 
+		this.difficulty = 9;	//how many zeros must be at the beginning of a hash to complete the mining 
 		this.pendingTransaction = [];
 		this.miningReward = 100;
 	}
